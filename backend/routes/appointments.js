@@ -71,6 +71,14 @@ router.get('/', requireOwner, (req, res) => {
   });
 });
 
+// Owner only: permanently delete a single appointment
+router.delete('/:id', requireOwner, (req, res) => {
+  db.run(`DELETE FROM appointments WHERE id = ?`, [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: 'Delete failed.' });
+    res.json({ deleted: this.changes > 0 });
+  });
+});
+
 // Owner only: cancel / update status
 router.patch('/:id/status', requireOwner, (req, res) => {
   const { status } = req.body;

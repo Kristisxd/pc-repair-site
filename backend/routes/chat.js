@@ -45,6 +45,14 @@ router.post('/conversations/:id/read', requireOwner, (req, res) => {
   );
 });
 
+// Owner only: permanently delete a whole conversation
+router.delete('/conversations/:id', requireOwner, (req, res) => {
+  db.run(`DELETE FROM chat_messages WHERE conversation_id = ?`, [req.params.id], function (err) {
+    if (err) return res.status(500).json({ error: 'Delete failed.' });
+    res.json({ deleted: this.changes });
+  });
+});
+
 // Public: save a push subscription (so we can notify the owner's phone)
 // In this single-owner setup any subscription registered from the admin dashboard is treated as "your phone".
 router.post('/push-subscribe', (req, res) => {

@@ -74,14 +74,14 @@ export default function AdminDashboard() {
     fetch(`${API}/api/appointments`, { headers: authHeaders })
       .then((r) => r.json())
       .then(setAppointments)
-      .catch(() => { });
+      .catch(() => {});
   };
 
   const loadConversations = () => {
     fetch(`${API}/api/chat/conversations`, { headers: authHeaders })
       .then((r) => r.json())
       .then(setConversations)
-      .catch(() => { });
+      .catch(() => {});
   };
 
   useEffect(() => {
@@ -103,6 +103,32 @@ export default function AdminDashboard() {
     return () => socket.disconnect();
   }, [token]);
 
+  const deleteAppointment = (id) => {
+    if (!confirm('Delete this appointment? This can\'t be undone.')) return;
+    fetch(`${API}/api/appointments/${id}`, { method: 'DELETE', headers: authHeaders }).then(loadAppointments);
+  };
+
+  const deleteConversation = (id) => {
+    if (!confirm('Delete this whole conversation? This can\'t be undone.')) return;
+    fetch(`${API}/api/chat/conversations/${id}`, { method: 'DELETE', headers: authHeaders }).then(() => {
+      if (active === id) {
+        setActive(null);
+        setMsgs([]);
+      }
+      loadConversations();
+    });
+  };
+
+  const deleteAllData = () => {
+    if (!confirm('Delete ALL appointments and ALL chat conversations? This can\'t be undone.')) return;
+    fetch(`${API}/api/admin/clear-all`, { method: 'DELETE', headers: authHeaders }).then(() => {
+      setActive(null);
+      setMsgs([]);
+      loadAppointments();
+      loadConversations();
+    });
+  };
+
   const openConversation = (id) => {
     setActive(id);
     fetch(`${API}/api/chat/history/${id}`)
@@ -113,10 +139,6 @@ export default function AdminDashboard() {
 
   const reply = () => {
     if (!val.trim() || !active) return;
-    fetch(`${API}/api/chat/history/${active}`)
-      .then((r) => r.json())
-      .then(setMsgs)
-      .catch(() => {});
     socketRef.current.emit('owner-message', { conversationId: active, body: val });
     setVal('');
   };
@@ -125,8 +147,6 @@ export default function AdminDashboard() {
     try {
       const reg = await navigator.serviceWorker.register('/sw.js');
       const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      console.log("VAPID key:", publicKey);
-      console.log(import.meta.env);
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
@@ -157,11 +177,19 @@ export default function AdminDashboard() {
 
       <div className="flex items-center justify-between mb-6">
         <h1 className="font-mono text-xl font-bold">Owner dashboard</h1>
-        {!pushEnabled && (
-          <button onClick={enablePush} className="text-xs font-mono border border-line rounded-lg px-3 py-2 hover:border-copper">
-            Enable phone notifications
+        <div className="flex items-center gap-2">
+          {!pushEnabled && (
+            <button onClick={enablePush} className="text-xs font-mono border border-line rounded-lg px-3 py-2 hover:border-copper">
+              Enable phone notifications
+            </button>
+          )}
+          <button
+            onClick={deleteAllData}
+            className="text-xs font-mono border border-line rounded-lg px-3 py-2 hover:border-red-400 hover:text-red-400"
+          >
+            Delete all data
           </button>
-        )}
+        </div>
       </div>
 
       <div className="grid md:grid-cols-2 gap-6">
@@ -169,11 +197,20 @@ export default function AdminDashboard() {
           <p className="text-xs uppercase tracking-wide text-muted font-mono mb-3">Upcoming appointments</p>
           <div className="space-y-2">
             {appointments.map((a) => (
-              <div key={a.id} className="bg-panel border border-line rounded-xl p-3 text-sm">
-                <p className="font-semibold">
-                  {a.appointment_date} {a.appointment_time} — {a.customer_name}
-                </p>
-                <p className="text-muted">{a.phone}{a.issue ? ` · ${a.issue}` : ''}</p>
+              <div key={a.id} className="bg-panel border border-line rounded-xl p-3 text-sm flex items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold">
+                    {a.appointment_date} {a.appointment_time} — {a.customer_name}
+                  </p>
+                  <p className="text-muted">{a.phone}{a.issue ? ` · ${a.issue}` : ''}</p>
+                </div>
+                <button
+                  onClick={() => deleteAppointment(a.id)}
+                  className="text-xs text-muted hover:text-red-400 shrink-0"
+                  aria-label="Delete appointment"
+                >
+                  Delete
+                </button>
               </div>
             ))}
             {appointments.length === 0 && <p className="text-muted text-sm">No appointments yet.</p>}
@@ -185,17 +222,25 @@ export default function AdminDashboard() {
           <div className="flex gap-4">
             <div className="w-1/3 space-y-1">
               {conversations.map((c) => (
-                <button
-                  key={c.conversation_id}
-                  onClick={() => openConversation(c.conversation_id)}
-                  className={
-                    'w-full text-left px-2 py-2 rounded-lg text-xs font-mono border ' +
-                    (active === c.conversation_id ? 'border-copper bg-panel2' : 'border-line')
-                  }
-                >
-                  {c.conversation_id.slice(0, 6)}
-                  {c.unread > 0 && <span className="ml-1 text-copper">●{c.unread}</span>}
-                </button>
+                <div key={c.conversation_id} className="flex items-center gap-1">
+                  <button
+                    onClick={() => openConversation(c.conversation_id)}
+                    className={
+                      'flex-1 text-left px-2 py-2 rounded-lg text-xs font-mono border ' +
+                      (active === c.conversation_id ? 'border-copper bg-panel2' : 'border-line')
+                    }
+                  >
+                    {c.conversation_id.slice(0, 6)}
+                    {c.unread > 0 && <span className="ml-1 text-copper">●{c.unread}</span>}
+                  </button>
+                  <button
+                    onClick={() => deleteConversation(c.conversation_id)}
+                    className="text-muted hover:text-red-400 text-xs px-1"
+                    aria-label="Delete conversation"
+                  >
+                    ×
+                  </button>
+                </div>
               ))}
             </div>
             <div className="flex-1 bg-panel border border-line rounded-xl p-3 flex flex-col" style={{ height: 320 }}>
