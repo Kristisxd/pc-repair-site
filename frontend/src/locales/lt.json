@@ -27,5 +27,10 @@
   "booked": "Užsakyta",
   "chatTitle": "Turite klausimą?",
   "chatPlaceholder": "Rašykite klausimą...",
-  "send": "Siųsti"
+  "send": "Siųsti",
+  "contactTitle": "Susisiekite",
+  "contactAddress": "Taikos pr. 123, Klaipėda, Lietuva",
+  "contactPhone": "+370 600 00000",
+  "contactEmail": "hello@circuitandco.lt",
+  "contactHours": "I–V 9:00–18:00, VI 10:00–14:00"
 }
