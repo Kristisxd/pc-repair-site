@@ -18,7 +18,7 @@ const chatRoutes = require('./routes/chat');
 const app = express();
 const server = http.createServer(app);
 
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'https://pc-repair-site.onrender.com';
 const PORT = process.env.PORT || 4000;
 
 console.log(process.env.ADMIN_EMAIL);
