@@ -44,6 +44,10 @@ export default function ChatWidget() {
 
   const send = () => {
     if (!val.trim()) return;
+    fetch(`${API}/api/chat/history/${conversationId.current}`)
+      .then((r) => r.json())
+      .then(setMsgs)
+      .catch(() => {});
     socketRef.current.emit('customer-message', { conversationId: conversationId.current, body: val });
     setVal('');
   };

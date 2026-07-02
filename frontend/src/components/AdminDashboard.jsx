@@ -74,14 +74,14 @@ export default function AdminDashboard() {
     fetch(`${API}/api/appointments`, { headers: authHeaders })
       .then((r) => r.json())
       .then(setAppointments)
-      .catch(() => {});
+      .catch(() => { });
   };
 
   const loadConversations = () => {
     fetch(`${API}/api/chat/conversations`, { headers: authHeaders })
       .then((r) => r.json())
       .then(setConversations)
-      .catch(() => {});
+      .catch(() => { });
   };
 
   useEffect(() => {
@@ -113,6 +113,10 @@ export default function AdminDashboard() {
 
   const reply = () => {
     if (!val.trim() || !active) return;
+    fetch(`${API}/api/chat/history/${active}`)
+      .then((r) => r.json())
+      .then(setMsgs)
+      .catch(() => {});
     socketRef.current.emit('owner-message', { conversationId: active, body: val });
     setVal('');
   };
@@ -121,6 +125,8 @@ export default function AdminDashboard() {
     try {
       const reg = await navigator.serviceWorker.register('/sw.js');
       const publicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+      console.log("VAPID key:", publicKey);
+      console.log(import.meta.env);
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
