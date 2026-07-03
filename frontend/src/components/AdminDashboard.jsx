@@ -139,6 +139,10 @@ export default function AdminDashboard() {
 
   const reply = () => {
     if (!val.trim() || !active) return;
+    fetch(`${API}/api/chat/history/${active}`)
+      .then((r) => r.json())
+      .then(setMsgs)
+      .catch(() => {});
     socketRef.current.emit('owner-message', { conversationId: active, body: val });
     setVal('');
   };
